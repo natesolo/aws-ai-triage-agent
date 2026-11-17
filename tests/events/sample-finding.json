@@ -1,0 +1,13 @@
+{
+  "version": "0",
+  "source": "aws.guardduty",
+  "detail-type": "GuardDuty Finding",
+  "region": "us-east-1",
+  "detail": {
+    "type": "Recon:EC2/PortProbeUnprotectedPort",
+    "severity": 2,
+    "title": "[TEST] Unprotected port on EC2 instance is being probed",
+    "region": "us-east-1",
+    "accountId": "000000000000"
+  }
+}

@@ -3,3 +3,5 @@
 *.tfstate.*
 *.tfvars
 .DS_Store
+build/
+response.json
