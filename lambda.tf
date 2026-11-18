@@ -1,6 +1,7 @@
 data "archive_file" "lambda" {
   type        = "zip"
-  source_file = "${path.module}/lambda/handler.py"
+  source_dir  = "${path.module}/lambda"
+  excludes    = ["__pycache__", "__pycache__/**"]
   output_path = "${path.module}/build/handler.zip"
 }
 

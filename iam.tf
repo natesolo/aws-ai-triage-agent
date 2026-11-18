@@ -41,3 +41,19 @@ resource "aws_iam_role_policy" "read_webhook" {
     }]
   })
 }
+
+# LookupEvents doesn't support resource-level permissions, so "*" is required.
+# It's read-only and limited to the account's last 90 days of management events.
+resource "aws_iam_role_policy" "read_cloudtrail" {
+  name = "lookup-cloudtrail-events"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "cloudtrail:LookupEvents"
+      Resource = "*"
+    }]
+  })
+}

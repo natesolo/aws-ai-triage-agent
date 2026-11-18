@@ -1,0 +1,20 @@
+{
+  "version": "0",
+  "source": "aws.guardduty",
+  "detail-type": "GuardDuty Finding",
+  "region": "us-east-1",
+  "detail": {
+    "type": "UnauthorizedAccess:IAMUser/ConsoleLoginSuccess.B",
+    "severity": 5,
+    "title": "[TEST] Unusual console login by nate-admin",
+    "region": "us-east-1",
+    "accountId": "000000000000",
+    "resource": {
+      "resourceType": "AccessKey",
+      "accessKeyDetails": {
+        "userName": "nate-admin",
+        "accessKeyId": "GeneratedFindingAccessKeyId"
+      }
+    }
+  }
+}
