@@ -3,7 +3,10 @@
 No AWS calls here, so this file can be unit tested without credentials.
 """
 
+import json
+
 MAX_EVENTS = 5
+LOOKUP_LIMIT = 50
 PLACEHOLDER_PREFIX = "GeneratedFinding"
 
 
@@ -34,9 +37,26 @@ def lookup_attribute(finding):
     return None
 
 
+def is_write(event):
+    """True when CloudTrail marks the call as changing something."""
+    try:
+        detail = json.loads(event.get("CloudTrailEvent") or "{}")
+    except ValueError:
+        return False
+    return detail.get("readOnly") is False
+
+
+def prioritize(events):
+    """Writes first, then reads. Each group keeps CloudTrail's newest-first order."""
+    writes = [e for e in events if is_write(e)]
+    reads = [e for e in events if not is_write(e)]
+    return writes + reads
+
+
 def _event_line(event):
     time = event["EventTime"].strftime("%Y-%m-%d %H:%M UTC")
-    return f"• {time}  {event['EventName']}  ({event.get('EventSource', 'unknown')})"
+    tag = "WRITE " if is_write(event) else ""
+    return f"• {tag}{time}  {event['EventName']}  ({event.get('EventSource', 'unknown')})"
 
 
 def build_message(finding, events, lookup):
@@ -57,7 +77,12 @@ def build_message(finding, events, lookup):
     elif not events:
         lines.append(f"_CloudTrail context: no activity for {lookup['AttributeValue']} in the last 24h._")
     else:
-        lines.append(f"*Recent activity for {lookup['AttributeValue']} (last 24h):*")
-        lines.extend(_event_line(e) for e in events[:MAX_EVENTS])
+        ordered = prioritize(events)
+        writes = sum(1 for e in ordered if is_write(e))
+        lines.append(
+            f"*Recent activity for {lookup['AttributeValue']} (last 24h, "
+            f"{writes} write / {len(ordered) - writes} read, writes first):*"
+        )
+        lines.extend(_event_line(e) for e in ordered[:MAX_EVENTS])
 
     return "\n".join(lines)

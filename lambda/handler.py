@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import boto3
 
-from triage import MAX_EVENTS, build_message, lookup_attribute, parse_finding
+from triage import LOOKUP_LIMIT, build_message, lookup_attribute, parse_finding
 
 ssm = boto3.client("ssm")
 cloudtrail = boto3.client("cloudtrail")
@@ -28,7 +28,7 @@ def recent_events(lookup):
         LookupAttributes=[lookup],
         StartTime=end - timedelta(hours=24),
         EndTime=end,
-        MaxResults=MAX_EVENTS,
+        MaxResults=LOOKUP_LIMIT,
     )
     return resp.get("Events", [])
 
