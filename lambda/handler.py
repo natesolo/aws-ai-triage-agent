@@ -4,11 +4,15 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 import boto3
+from botocore.config import Config
 
+from ai import AI_UNAVAILABLE, build_request, format_triage, parse_response
 from triage import LOOKUP_LIMIT, build_message, lookup_attribute, parse_finding
 
 ssm = boto3.client("ssm")
 cloudtrail = boto3.client("cloudtrail")
+# First call with a new schema can take ~90s while Bedrock compiles it.
+bedrock = boto3.client("bedrock-runtime", config=Config(read_timeout=100, retries={"max_attempts": 2}))
 _webhook = None
 
 
@@ -33,6 +37,15 @@ def recent_events(lookup):
     return resp.get("Events", [])
 
 
+def ai_section(finding, events):
+    try:
+        response = bedrock.converse(**build_request(os.environ["BEDROCK_MODEL_ID"], finding, events))
+        return format_triage(parse_response(response))
+    except Exception as exc:  # AI is a bonus; the alert must still go out
+        print(f"AI triage failed: {exc}")
+        return AI_UNAVAILABLE
+
+
 def post_to_slack(text):
     req = urllib.request.Request(
         get_webhook(),
@@ -53,5 +66,6 @@ def handler(event, context):
         print(f"CloudTrail lookup failed: {exc}")
         events = None
 
-    post_to_slack(build_message(finding, events, lookup))
+    message = build_message(finding, events, lookup)
+    post_to_slack(f"{message}\n\n{ai_section(finding, events)}")
     return {"ok": True}

@@ -17,11 +17,12 @@ resource "aws_lambda_function" "triage" {
   handler          = "handler.handler"
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
-  timeout          = 10
+  timeout          = 120
 
   environment {
     variables = {
-      WEBHOOK_PARAM = "/triage-agent/slack-webhook"
+      WEBHOOK_PARAM    = "/triage-agent/slack-webhook"
+      BEDROCK_MODEL_ID = local.bedrock_profile
     }
   }
 
