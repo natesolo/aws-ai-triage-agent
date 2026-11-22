@@ -1,5 +1,5 @@
 locals {
-  bedrock_model       = "anthropic.claude-haiku-5-5"
+  bedrock_model       = "anthropic.claude-haiku-4-5-20251001-v1:0"
   bedrock_profile     = "us.${local.bedrock_model}"
   bedrock_profile_arn = "arn:aws:bedrock:${data.aws_region.current.region}:${local.account_id}:inference-profile/${local.bedrock_profile}"
 
