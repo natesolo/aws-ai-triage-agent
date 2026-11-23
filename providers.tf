@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.10"
   backend "s3" {
     bucket       = "triage-agent-tfstate-355750681084"
     key          = "aws-ai-triage-agent/terraform.tfstate"
@@ -23,5 +23,5 @@ terraform {
 }
 
 provider "aws" {
-  region  = "us-east-1"
+  region = "us-east-1"
 }
