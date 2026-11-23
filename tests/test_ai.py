@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / "lambda"))
 from ai import SCHEMA, build_request, format_triage, parse_response  # noqa: E402
 from triage import parse_finding  # noqa: E402
 
-MODEL = "us.anthropic.claude-haiku-5-5"
+MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 
 def finding():
