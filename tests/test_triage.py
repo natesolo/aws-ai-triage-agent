@@ -110,5 +110,16 @@ class WriteFirst(unittest.TestCase):
         self.assertIn("1 write / 10 read", message)
 
 
+class SlackEscapeTest(unittest.TestCase):
+    def test_injected_title_cannot_ping_or_link(self):
+        finding = parse_finding(load("injection-attempt.json"))
+        finding["title"] = "Bad <!channel> <https://evil.example|click> & more"
+        message = build_message(finding, None, None)
+        self.assertNotIn("<!channel>", message)
+        self.assertNotIn("<https://", message)
+        self.assertIn("&lt;!channel&gt;", message)
+        self.assertIn("&amp; more", message)
+
+
 if __name__ == "__main__":
     unittest.main()

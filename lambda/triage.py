@@ -24,6 +24,11 @@ def parse_finding(event):
     }
 
 
+def slack_escape(text):
+    """Escape Slack control characters so log data can't ping @channel or fake links."""
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def _real(value):
     return bool(value) and not value.startswith(PLACEHOLDER_PREFIX)
 
@@ -56,17 +61,19 @@ def prioritize(events):
 def _event_line(event):
     time = event["EventTime"].strftime("%Y-%m-%d %H:%M UTC")
     tag = "WRITE " if is_write(event) else ""
-    return f"• {tag}{time}  {event['EventName']}  ({event.get('EventSource', 'unknown')})"
+    name = slack_escape(event["EventName"])
+    source = slack_escape(event.get("EventSource", "unknown"))
+    return f"• {tag}{time}  {name}  ({source})"
 
 
 def build_message(finding, events, lookup):
     lines = [
         "*GuardDuty finding*",
-        f"Type: {finding['type']}",
+        f"Type: {slack_escape(finding['type'])}",
         f"Severity: {finding['severity']}",
-        f"Title: {finding['title']}",
-        f"Region: {finding['region']}",
-        f"Account: {finding['account_id']}",
+        f"Title: {slack_escape(finding['title'])}",
+        f"Region: {slack_escape(finding['region'])}",
+        f"Account: {slack_escape(finding['account_id'])}",
         "",
     ]
 
@@ -75,12 +82,12 @@ def build_message(finding, events, lookup):
     elif events is None:
         lines.append("_CloudTrail context: lookup failed, check the Lambda logs._")
     elif not events:
-        lines.append(f"_CloudTrail context: no activity for {lookup['AttributeValue']} in the last 24h._")
+        lines.append(f"_CloudTrail context: no activity for {slack_escape(lookup['AttributeValue'])} in the last 24h._")
     else:
         ordered = prioritize(events)
         writes = sum(1 for e in ordered if is_write(e))
         lines.append(
-            f"*Recent activity for {lookup['AttributeValue']} (last 24h, "
+            f"*Recent activity for {slack_escape(lookup['AttributeValue'])} (last 24h, "
             f"{writes} write / {len(ordered) - writes} read, writes first):*"
         )
         lines.extend(_event_line(e) for e in ordered[:MAX_EVENTS])
