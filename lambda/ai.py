@@ -2,7 +2,7 @@
 
 import json
 
-from triage import is_write, prioritize
+from triage import is_write, prioritize, slack_escape
 
 SEVERITIES = ["low", "medium", "high", "critical"]
 MAX_STEPS = 3
@@ -100,18 +100,13 @@ def parse_response(response):
     }
 
 
-def _slack_escape(text):
-    # Stops model output from creating @channel pings or fake links in Slack.
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
 def format_triage(result):
     lines = [
         "*AI triage (verify before acting):*",
         f"Severity: {result['severity'].upper()}  |  Likely benign: {'yes' if result['likely_benign'] else 'no'}",
-        f"Summary: {_slack_escape(result['summary'])}",
+        f"Summary: {slack_escape(result['summary'])}",
     ]
     if result["next_steps"]:
         lines.append("Next steps:")
-        lines.extend(f"{i}. {_slack_escape(s)}" for i, s in enumerate(result["next_steps"], 1))
+        lines.extend(f"{i}. {slack_escape(s)}" for i, s in enumerate(result["next_steps"], 1))
     return "\n".join(lines)
