@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# id-token lets the job request an OIDC token from GitHub. No AWS keys are stored here.
+permissions:
+  id-token: write
+  contents: read
+
+# Never run two Terraform jobs at once.
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Unit tests
+        run: python -m unittest discover tests -v
+
+  terraform:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Pull requests get the read-only role. Only pushes to main get the deploy role.
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ github.event_name == 'push' && format('arn:aws:iam::{0}:role/github-actions-deploy', secrets.AWS_ACCOUNT_ID) || format('arn:aws:iam::{0}:role/github-actions-plan', secrets.AWS_ACCOUNT_ID) }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.2
+
+      - name: Format check
+        run: terraform fmt -check
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+
+      # Apply exactly the plan above, and only on main.
+      - name: Apply
+        if: github.event_name == 'push'
+        run: terraform apply -input=false tfplan

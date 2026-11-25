@@ -1,7 +1,9 @@
 # Lets GitHub Actions get short-lived AWS credentials. No access keys are stored in GitHub.
 
 locals {
-  github_repo  = "natesolo/aws-ai-triage-agent"
+  # GitHub's token includes the owner and repo IDs. Matching them means a renamed or
+  # re-created repo with the same name can't assume these roles.
+  github_repo  = "natesolo@114327607/aws-ai-triage-agent@1453276618"
   state_bucket = "triage-agent-tfstate-${local.account_id}"
 }
 
